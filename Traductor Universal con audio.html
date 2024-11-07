@@ -1,0 +1,479 @@
+<html><head><base href="/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traductor Universal</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 800px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    color: #1e3c72;
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.header .subtitle {
+    color: #2a5298;
+    font-size: 1.2em;
+    margin-top: 5px;
+}
+
+.translation-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.input-container, .output-container {
+    position: relative;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+}
+
+textarea {
+    width: 100%;
+    height: 200px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: none;
+    font-size: 16px;
+}
+
+.translate-btn {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background: #1e3c72;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+}
+
+.translate-btn:hover {
+    background: #2a5298;
+}
+
+.swap-btn {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #1e3c72;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    margin-top: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1e3c72;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.mic-btn {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    background: #1e3c72;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.mic-btn svg {
+    fill: white;
+}
+
+.mic-btn.recording {
+    background: #ff4444;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.speak-btn {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    background: #1e3c72;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.speak-btn svg {
+    fill: white;
+}
+
+.speak-btn:hover {
+    background: #2a5298;
+}
+
+.speak-btn.speaking {
+    background: #ff4444;
+    animation: pulse 1.5s infinite;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>CONSULTORIA EN INGENIERIA Y EFICIENCIA ENERGETICA</h1>
+            <div class="subtitle">Consultoria-ingenieria.com</div>
+            <p>Traduce texto entre diferentes idiomas al instante</p>
+        </div>
+        
+        <div class="translation-container">
+            <div class="input-container">
+                <select id="sourceLanguage">
+                    <option value="es">Español</option>
+                    <option value="en">Inglés</option>
+                    <option value="fr">Francés</option>
+                    <option value="de">Alemán</option>
+                    <option value="it">Italiano</option>
+                    <option value="pt">Portugués</option>
+                    <option value="ru">Ruso</option>
+                    <option value="zh">Chino</option>
+                    <option value="ja">Japonés</option>
+                </select>
+                <textarea id="sourceText" placeholder="Escribe o pega el texto aquí..."></textarea>
+                <button class="mic-btn" id="micBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 12,16A5,5 0 0,0 17,11H19Z"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="output-container">
+                <select id="targetLanguage">
+                    <option value="en">Inglés</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Francés</option>
+                    <option value="de">Alemán</option>
+                    <option value="it">Italiano</option>
+                    <option value="pt">Portugués</option>
+                    <option value="ru">Ruso</option>
+                    <option value="zh">Chino</option>
+                    <option value="ja">Japonés</option>
+                </select>
+                <textarea id="targetText" placeholder="Traducción..." readonly></textarea>
+                <button class="speak-btn" id="speakBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24">
+                        <path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.84 14,18.7V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.76 16.5,12M3,9V15H7L12,20V4L7,9H3Z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <button class="swap-btn" id="swapLanguages">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1e3c72" stroke-width="2">
+                <path d="M7 10l5-5 5 5M7 14l5 5 5-5"/>
+            </svg>
+        </button>
+        
+        <button class="translate-btn" id="translateBtn">Traducir</button>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Traduciendo...</p>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sourceLanguage = document.getElementById('sourceLanguage');
+    const targetLanguage = document.getElementById('targetLanguage');
+    const sourceText = document.getElementById('sourceText');
+    const targetText = document.getElementById('targetText');
+    const translateBtn = document.getElementById('translateBtn');
+    const swapLanguagesBtn = document.getElementById('swapLanguages');
+    const loading = document.getElementById('loading');
+    const micBtn = document.getElementById('micBtn');
+    const speakBtn = document.getElementById('speakBtn');
+
+    let recognition;
+    try {
+        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || window.mozSpeechRecognition || window.msSpeechRecognition;
+        recognition = new window.SpeechRecognition();
+    } catch (e) {
+        console.error('Speech recognition not supported:', e);
+        micBtn.style.display = 'none';
+    }
+
+    if (recognition) {
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            sourceText.value = transcript;
+            micBtn.classList.remove('recording');
+            translateText();
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error:', event.error);
+            micBtn.classList.remove('recording');
+        };
+
+        recognition.onend = function() {
+            micBtn.classList.remove('recording');
+        };
+    }
+
+    micBtn.addEventListener('click', function() {
+        if (!recognition) {
+            alert('Lo sentimos, el reconocimiento de voz no está disponible en este dispositivo o navegador.');
+            return;
+        }
+
+        if (micBtn.classList.contains('recording')) {
+            recognition.stop();
+        } else {
+            try {
+                recognition.lang = sourceLanguage.value === 'en' ? 'en-US' : 
+                                 sourceLanguage.value === 'es' ? 'es-ES' :
+                                 sourceLanguage.value === 'fr' ? 'fr-FR' :
+                                 sourceLanguage.value === 'de' ? 'de-DE' :
+                                 sourceLanguage.value === 'it' ? 'it-IT' :
+                                 sourceLanguage.value === 'pt' ? 'pt-PT' :
+                                 sourceLanguage.value === 'ru' ? 'ru-RU' :
+                                 sourceLanguage.value === 'zh' ? 'zh-CN' :
+                                 sourceLanguage.value === 'ja' ? 'ja-JP' : 'en-US';
+                recognition.start();
+                micBtn.classList.add('recording');
+            } catch (e) {
+                console.error('Speech recognition error:', e);
+                alert('Error al iniciar el reconocimiento de voz. Por favor, inténtelo de nuevo.');
+                micBtn.classList.remove('recording');
+            }
+        }
+    });
+
+    async function translateText() {
+        if (!sourceText.value.trim()) {
+            targetText.value = '';
+            return;
+        }
+
+        loading.style.display = 'block';
+        
+        try {
+            const searchParams = new URLSearchParams({
+                q: sourceText.value,
+                langpair: `${sourceLanguage.value}|${targetLanguage.value}`
+            });
+
+            const apiUrl = `https://api.mymemory.translated.net/get?${searchParams.toString()}`;
+            
+            const response = await fetch(apiUrl);
+
+            if (!response.ok) {
+                throw new Error('Translation error');
+            }
+
+            const data = await response.json();
+            
+            if (data.responseStatus === 200) {
+                targetText.value = data.responseData.translatedText;
+            } else {
+                throw new Error('Translation error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            targetText.value = 'Error en la traducción. Por favor, intenta de nuevo.';
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    function swapLanguages() {
+        const tempLang = sourceLanguage.value;
+        sourceLanguage.value = targetLanguage.value;
+        targetLanguage.value = tempLang;
+        
+        const tempText = sourceText.value;
+        sourceText.value = targetText.value;
+        targetText.value = tempText;
+
+        if (sourceText.value) {
+            translateText();
+        }
+    }
+
+    translateBtn.addEventListener('click', translateText);
+    swapLanguagesBtn.addEventListener('click', swapLanguages);
+    
+    let timeout = null;
+    sourceText.addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(translateText, 1000);
+    });
+
+    sourceLanguage.addEventListener('change', function() {
+        if (sourceText.value) {
+            translateText();
+        }
+    });
+
+    targetLanguage.addEventListener('change', function() {
+        if (sourceText.value) {
+            translateText();
+        }
+    });
+
+    let speaking = false;
+    const synth = window.speechSynthesis;
+
+    speakBtn.addEventListener('click', function() {
+        if (speaking) {
+            synth.cancel();
+            speaking = false;
+            speakBtn.classList.remove('speaking');
+            return;
+        }
+
+        if (!targetText.value.trim()) {
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(targetText.value);
+        
+        utterance.lang = targetLanguage.value === 'en' ? 'en-US' : 
+                        targetLanguage.value === 'es' ? 'es-ES' :
+                        targetLanguage.value === 'fr' ? 'fr-FR' :
+                        targetLanguage.value === 'de' ? 'de-DE' :
+                        targetLanguage.value === 'it' ? 'it-IT' :
+                        targetLanguage.value === 'pt' ? 'pt-PT' :
+                        targetLanguage.value === 'ru' ? 'ru-RU' :
+                        targetLanguage.value === 'zh' ? 'zh-CN' :
+                        targetLanguage.value === 'ja' ? 'ja-JP' : 'en-US';
+
+        const setVoice = () => {
+            const voices = synth.getVoices();
+            let voice = voices.find(v => 
+                v.lang.startsWith(utterance.lang) && 
+                v.name.toLowerCase().includes('female')
+            );
+            
+            if (!voice) {
+                voice = voices.find(v => v.lang.startsWith(utterance.lang));
+            }
+            
+            if (voice) {
+                utterance.voice = voice;
+            }
+        };
+
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = setVoice;
+        }
+        setVoice();
+
+        utterance.onstart = function() {
+            speaking = true;
+            speakBtn.classList.add('speaking');
+        };
+
+        utterance.onend = function() {
+            speaking = false;
+            speakBtn.classList.remove('speaking');
+        };
+
+        utterance.onerror = function(event) {
+            console.error('Speech synthesis error:', event);
+            speaking = false;
+            speakBtn.classList.remove('speaking');
+        };
+
+        synth.cancel();
+        setTimeout(() => synth.speak(utterance), 50);
+    });
+
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = function() {
+            let voices = synth.getVoices();
+        };
+    }
+});
+</script>
+</body></html>
